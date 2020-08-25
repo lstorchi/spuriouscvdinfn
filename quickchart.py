@@ -94,7 +94,8 @@ if __name__ == "__main__":
 
     max = -1
     kmax = ""
-    for k in ["O3", "NO2", "PM10", "SO2", "CO"]:
+    aqidata = ["O3", "NO2", "PM10", "SO2", "CO"]
+    for k in aqidata:
         just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
         print("%5s has %10d values"%(k, just2020.shape[0]))
         if max < just2020.shape[0]:
@@ -104,3 +105,10 @@ if __name__ == "__main__":
     just2020kmax = allinq_davg[k][allinq_davg[kmax]["Year"] == 2020.0 ]
     for d in just2020kmax.index: 
         print(d)
+        for k in aqidata:
+            just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
+            try:
+                print(" ", k, " => %8.4f"%(just2020.loc[d]["Value"]), end = "")
+            except KeyError as ke:
+                print(" ", k, " => NaN", end = "")
+        print()
