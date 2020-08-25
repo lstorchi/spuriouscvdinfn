@@ -92,7 +92,15 @@ if __name__ == "__main__":
         plt.plot(x_values, y_values, label=k)
         plt.savefig(k+'.png')
 
-    for k in allinq_davg:
+    max = -1
+    kmax = ""
+    for k in ["O3", "NO2", "PM10", "SO2", "CO"]:
         just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
         print("%5s has %10d values"%(k, just2020.shape[0]))
+        if max < just2020.shape[0]:
+            kmax = k
         #print(just2020.index)
+    
+    just2020kmax = allinq_davg[k][allinq_davg[kmax]["Year"] == 2020.0 ]
+    for d in just2020kmax.index: 
+        print(d)
