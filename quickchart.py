@@ -63,13 +63,13 @@ if __name__ == "__main__":
 
         newdf = pd.DataFrame({'Date':dates,'Value':values})
         newdf['Date'] = pd.to_datetime(newdf.Date)
-        newdf = newdf[newdf['Value'] > 0.0]  
+        newdf = newdf[newdf['Value'] >= 0.0]  
         allinq[k] = newdf.sort_values(by='Date')
         allinq[k]["Year"] = pd.DatetimeIndex(allinq[k]["Date"]).year
 
         print(allinq[k].head())
 
-        lastdf = allinq[k].resample('w', on='Date').mean()
+        lastdf = allinq[k].resample('d', on='Date').mean()
         allinq_davg[k] = lastdf
         
         print(allinq_davg[k].head())
@@ -79,6 +79,8 @@ if __name__ == "__main__":
         x_values = just2020.index
         y_values = just2020["Value"]
         
+        plt.clf()
+
         ax = plt.gca()
         formatter = mdates.DateFormatter("%Y-%m-%d")
         ax.xaxis.set_major_formatter(formatter)
@@ -87,6 +89,10 @@ if __name__ == "__main__":
         ax.set(xlabel="Date", ylabel="", \
             title= k + " values " )
 
-        plt.plot(x_values, y_values)
-        plt.show()
+        plt.plot(x_values, y_values, label=k)
+        plt.savefig(k+'.png')
 
+    for k in allinq_davg:
+        just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
+        print("%5s has %10d values"%(k, just2020.shape[0]))
+        #print(just2020.index)
