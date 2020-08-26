@@ -10,9 +10,11 @@ import matplotlib.dates as mdates
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f","--file", help="input csv file ", \
+    parser.add_argument("-f","--file", help="input poullants csv file ", \
             required=True, type=str)
-    
+    parser.add_argument("-c","--filecases", help="input cases csv file ", \
+            required=False, type=str, default="")
+
     args = parser.parse_args()
     
     filename = args.file
@@ -143,4 +145,73 @@ if __name__ == "__main__":
 
     plt.plot(x_values, y_values, label="AQI")
     plt.savefig('aqi.png')
+
+    if args.filecases != "":
+        cdf = pd.read_csv(args.filecases)
+
+        dates = []
+        for i in range(cdf["Date"].values.shape[0]):
+            d = cdf["Date"].values[i].split("T")[0]
+            ds = datetime.datetime.strptime(d,"%Y-%m-%d").date()
+            dates.append(ds)
+        
+        totcases = []
+        for i in range(cdf["Total Cases"].values.shape[0]):
+            tc = float(cdf["Total Cases"].values[i])
+            totcases.append(tc)
+        
+        ndf = pd.DataFrame({"Date":dates, "Total_Cases":totcases})
+        ndf = ndf.sort_values(by="Date")
+        
+        newcases = []
+        prev = 0.0
+        for i, r in ndf.iterrows():
+            nc = r["Total_Cases"] - prev
+            newcases.append(nc)
+            prev = r["Total_Cases"]
+            
+        ndf["New_Cases"] = newcases
+            
+        #print(ndf)
+        
+        idx = 0
+        allinqvalues = []
+        for i, r in ndf.iterrows():
+            d = r["Date"]
+            nc = r["New_Cases"]
+            tc = r["Total_Cases"]
+            inqvalues = {}
+            for k in aqidata:
+                just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
+                
+                try:
+                    value = just2020.loc[d, :]["Value"]
+                except KeyError as ke:
+                    value = -1.0
+                inqvalues[k] = value
+                
+            allinqvalues.append(inqvalues)
+            print(idx, nc, inqvalues["PM10"])
+            idx += 1
+            #print(inqvalues)
+            
+        """
+        plt.clf()
+        x_values = ndf["Dates"].values
+        y_values = ndf["New_Cases"].values
+ 
+
+        ax = plt.gca()
+        formatter = mdates.DateFormatter("%Y-%m-%d")
+        ax.xaxis.set_major_formatter(formatter)
+        locator = mdates.MonthLocator()
+        ax.xaxis.set_major_locator(locator)
+        ax.set(xlabel="Date", ylabel="", \
+            title= "New cases" )
+
+        plt.plot(x_values, y_values, label=k)
+        plt.show()
+        """
+
+
 
