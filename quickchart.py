@@ -48,8 +48,14 @@ if __name__ == "__main__":
         values = []
         for i in range(allinq[k]["Value"].values.shape[0]):
             v = allinq[k]["Value"].values[i]
-            v = v.replace(",", ".")
-            values.append(float(v))
+            if type(v) == str:
+                v = v.replace(",", ".")
+                if k == "CO":
+                    values.append(float(v)*1000.0)
+                else:
+                    values.append(float(v))
+            else:
+                values.append(float(v))
 
         dates = []
         for i in range(allinq[k]["Date"].values.shape[0]):
@@ -95,6 +101,7 @@ if __name__ == "__main__":
     max = -1
     kmax = ""
     aqidata = ["O3", "NO2", "PM10", "SO2", "CO"]
+    normv = {"O3":100.0, "NO2":90.0, "PM10":50.0, "SO2":125, "CO":10000}
     for k in aqidata:
         just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
         print("%5s has %10d values"%(k, just2020.shape[0]))
@@ -103,12 +110,37 @@ if __name__ == "__main__":
         #print(just2020.index)
     
     just2020kmax = allinq_davg[k][allinq_davg[kmax]["Year"] == 2020.0 ]
+    aqi = {}
     for d in just2020kmax.index: 
         print(d)
+        alldatain = True
+        cmax = []
         for k in aqidata:
             just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
             try:
                 print(" ", k, " => %8.4f"%(just2020.loc[d]["Value"]), end = "")
+                cmax.append(just2020.loc[d]["Value"]/normv[k])
             except KeyError as ke:
                 print(" ", k, " => NaN", end = "")
+                alldata = False
         print()
+
+        if alldatain:
+            aqi[d] = np.max (cmax) * 50.0
+            
+    plt.clf()
+
+    x_values = list(aqi.keys())
+    y_values = list(aqi.values())
+
+    ax = plt.gca()
+    formatter = mdates.DateFormatter("%Y-%m-%d")
+    ax.xaxis.set_major_formatter(formatter)
+    locator = mdates.MonthLocator()
+    ax.xaxis.set_major_locator(locator)
+    ax.set(xlabel="Date", ylabel="", \
+        title= "AQI values " )
+
+    plt.plot(x_values, y_values, label="AQI")
+    plt.savefig('aqi.png')
+
