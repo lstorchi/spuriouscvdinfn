@@ -86,7 +86,8 @@ if __name__ == "__main__":
 
         x_values = just2020.index
         y_values = just2020["Value"]
-        
+
+        """        
         plt.clf()
 
         ax = plt.gca()
@@ -99,6 +100,7 @@ if __name__ == "__main__":
 
         plt.plot(x_values, y_values, label=k)
         plt.savefig(k+'.png')
+        """
 
     max = -1
     kmax = ""
@@ -113,6 +115,10 @@ if __name__ == "__main__":
     
     just2020kmax = allinq_davg[k][allinq_davg[kmax]["Year"] == 2020.0 ]
     aqi = {}
+    alldatas = {"Date":[], "AQI":[]}
+    for k in aqidata:
+        alldatas[k] = []
+    alldatas["PM2.5"] = []
     for d in just2020kmax.index: 
         print(d)
         alldatain = True
@@ -124,12 +130,30 @@ if __name__ == "__main__":
                 cmax.append(just2020.loc[d]["Value"]/normv[k])
             except KeyError as ke:
                 print(" ", k, " => NaN", end = "")
-                alldata = False
+                alldatain = False
         print()
 
         if alldatain:
-            aqi[d] = np.max (cmax) * 50.0
-            
+            aqiv = np.max (cmax) * 50.0
+            aqi[d] = aqiv
+
+            pm25v = -9999.0
+            try:
+                pm25v = allinq_davg["PM2.5"].loc[d]["Value"]
+            except KeyError as ke:
+                continue 
+
+            if pm25v > 0.0:
+                alldatas["Date"].append(d)
+                alldatas["PM2.5"].append(pm25v)
+                for k in aqidata:
+                    alldatas[k].append(allinq_davg[k].loc[d]["Value"])
+                alldatas["AQI"].append(aqiv)
+           
+    allinq20202andaqi = pd.DataFrame(alldatas)
+    allinq20202andaqi.to_csv("AllPolluants2020.csv")
+
+    """
     plt.clf()
 
     x_values = list(aqi.keys())
@@ -145,6 +169,7 @@ if __name__ == "__main__":
 
     plt.plot(x_values, y_values, label="AQI")
     plt.savefig('aqi.png')
+    """
 
     if args.filecases != "":
         cdf = pd.read_csv(args.filecases)
@@ -174,26 +199,27 @@ if __name__ == "__main__":
             
         #print(ndf)
         
-        idx = 0
+        finalsetcases = {"Date" : [], \
+            "AQI" : [], "O3" : [], "NO2" : [], \
+            "PM10" : [], "SO2" : [], "CO" : [], \
+            "PM2.5" : [] , "New_Cases" : [], \
+            "Total_Cases" : []}
         allinqvalues = []
         for i, r in ndf.iterrows():
             d = r["Date"]
             nc = r["New_Cases"]
             tc = r["Total_Cases"]
             inqvalues = {}
-            for k in aqidata:
-                just2020 = allinq_davg[k][allinq_davg[k]["Year"] == 2020.0 ]
-                
-                try:
-                    value = just2020.loc[d, :]["Value"]
-                except KeyError as ke:
-                    value = -1.0
-                inqvalues[k] = value
-                
-            allinqvalues.append(inqvalues)
-            print(idx, nc, inqvalues["PM10"])
-            idx += 1
-            #print(inqvalues)
+            row = pd.DataFrame(allinq20202andaqi[allinq20202andaqi["Date"] == str(d)])
+            present = (row.shape[0] != 0)
+            
+            if present:
+                finalsetcases["New_Cases"].append(nc)
+                finalsetcases["Total_Cases"].append(tc)
+                for name in ['Date', 'AQI', 'O3', 'NO2', 'PM10', 'SO2', 'CO', 'PM2.5']:
+                    finalsetcases[name].append(row[name].values[0])
+
+        pd.DataFrame(finalsetcases).to_csv("AllPolluantsAndCases.csv")
             
         """
         plt.clf()
@@ -212,6 +238,3 @@ if __name__ == "__main__":
         plt.plot(x_values, y_values, label=k)
         plt.show()
         """
-
-
-
